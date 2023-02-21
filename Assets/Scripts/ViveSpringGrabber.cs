@@ -9,6 +9,8 @@ public class ViveSpringGrabber : Grabber
 {
     public string grabAction = "GrabPinch";
     private SpringJoint joint;
+
+    private Coroutine vibration;
     
     new void Start ()
     {
@@ -26,5 +28,32 @@ public class ViveSpringGrabber : Grabber
         {
             joint.connectedBody = null;
         }
+
+        if(joint.connectedBody != null)
+        {
+            if(vibration == null) vibration = StartCoroutine(ChestVibration());
+            
+        }
+        
+    }
+
+    IEnumerator ChestVibration()
+    {
+        float lastHingeAngle = joint.connectedBody.gameObject.GetComponent<HingeJoint>().angle;
+        float strength = 1f;
+        float frequency = 1f;
+        while (joint.connectedBody != null)
+        {
+            float angleDifference = (Mathf.Abs(lastHingeAngle - joint.connectedBody.gameObject.GetComponent<HingeJoint>().angle) > 1f) ? (Mathf.Abs(lastHingeAngle - joint.connectedBody.gameObject.GetComponent<HingeJoint>().angle)) : 0f;
+
+            frequency = Mathf.Lerp(0, 1, angleDifference / 0.1f / 360f);
+            strength = frequency;
+            Debug.Log(angleDifference);
+            SteamVR_Actions.default_Haptic[controller.inputSource].Execute(0, 0.1f, frequency, strength);
+            lastHingeAngle = joint.connectedBody.gameObject.GetComponent<HingeJoint>().angle;
+            yield return new WaitForSeconds(0.1f);
+        }
+        
+        vibration = null;
     }
 }
